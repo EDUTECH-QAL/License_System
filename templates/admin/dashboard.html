@@ -1,0 +1,147 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+
+<div class="flex flex-col md:flex-row justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold text-gray-800">لوحة التحكم</h2>
+    
+    <!-- Quick Search -->
+    <div class="relative w-full md:w-64 mt-4 md:mt-0">
+        <input type="text" id="quickSearch" placeholder="بحث سريع عن مدرسة..." 
+               class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500 shadow-sm">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-search text-gray-400"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+    <!-- Schools -->
+    <div class="bg-white rounded-lg shadow p-6 border-r-4 border-blue-500 transform hover:scale-105 transition-transform duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-500 ml-4">
+                <i class="fas fa-school fa-2x"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm">المدارس المسجلة</p>
+                <p class="text-2xl font-bold text-gray-800">{{ stats.schools_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Licenses -->
+    <div class="bg-white rounded-lg shadow p-6 border-r-4 border-green-500 transform hover:scale-105 transition-transform duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-500 ml-4">
+                <i class="fas fa-check-circle fa-2x"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm">التراخيص النشطة</p>
+                <p class="text-2xl font-bold text-gray-800">{{ stats.active_licenses }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Devices -->
+    <div class="bg-white rounded-lg shadow p-6 border-r-4 border-purple-500 transform hover:scale-105 transition-transform duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-500 ml-4">
+                <i class="fas fa-desktop fa-2x"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm">الأجهزة المفعلة</p>
+                <p class="text-2xl font-bold text-gray-800">{{ stats.active_devices }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Activations -->
+    <div class="bg-white rounded-lg shadow p-6 border-r-4 border-indigo-500 transform hover:scale-105 transition-transform duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-indigo-100 text-indigo-500 ml-4">
+                <i class="fas fa-chart-line fa-2x"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm">تفعيلات هذا الشهر</p>
+                <p class="text-2xl font-bold text-gray-800">{{ stats.activations_this_month }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expiring Soon -->
+    <div class="bg-white rounded-lg shadow p-6 border-r-4 border-yellow-500 transform hover:scale-105 transition-transform duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-500 ml-4">
+                <i class="fas fa-hourglass-half fa-2x"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm">تنتهي قريباً (30 يوم)</p>
+                <p class="text-2xl font-bold text-gray-800">{{ stats.expiring_soon }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blocked Devices -->
+    <div class="bg-white rounded-lg shadow p-6 border-r-4 border-red-500 transform hover:scale-105 transition-transform duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-500 ml-4">
+                <i class="fas fa-ban fa-2x"></i>
+            </div>
+            <div>
+                <p class="text-gray-500 text-sm">أجهزة محظورة</p>
+                <p class="text-2xl font-bold text-gray-800">{{ stats.blocked_devices }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Logs (Full Width) -->
+<div class="bg-white rounded-lg shadow overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-bold text-gray-800">آخر النشاطات</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التوقيت</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراء</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">النتيجة</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التفاصيل</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for log in stats.recent_logs %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ log.action }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 'bg-green-100 text-green-800' if log.result == 'success' else 'bg-red-100 text-red-800' }}">
+                            {{ log.result }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ log.details or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="p-3 bg-gray-50 text-center border-t border-gray-200">
+        <a href="{{ url_for('admin.logs') }}" class="text-sm text-blue-600 hover:text-blue-800">عرض كل السجلات</a>
+    </div>
+</div>
+
+<script>
+    // Search Functionality
+    const searchInput = document.getElementById('quickSearch');
+    searchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            // Redirect to schools page (assuming we implement search there)
+            // For now, just alert or filter if on schools page
+            // Let's assume we don't have search parameter on schools yet, but let's send it
+             window.location.href = "{{ url_for('admin.schools') }}?q=" + this.value;
+        }
+    });
+</script>
+{% endblock %}

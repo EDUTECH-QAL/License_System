@@ -1,0 +1,53 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-8">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800">إضافة مدرسة جديدة وترخيص</h2>
+    
+    <form method="POST">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">اسم المدرسة</label>
+                <input type="text" name="name" required class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">الإدارة التعليمية</label>
+                <input type="text" name="education_admin" required class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">البريد الإلكتروني (اختياري)</label>
+                <input type="email" name="contact_email" class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">رقم الهاتف (اختياري)</label>
+                <input type="text" name="phone" class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+            </div>
+        </div>
+
+        <div class="border-t border-gray-200 pt-6 mb-6">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">بيانات الترخيص</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">مفتاح الترخيص (اختياري - يولد تلقائياً)</label>
+                    <input type="text" name="license_key" placeholder="اتركه فارغاً للتوليد التلقائي" class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">الحد الأقصى للأجهزة</label>
+                    <input type="number" name="max_devices" value="1" min="1" required class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">تاريخ الانتهاء</label>
+                    <input type="date" name="expiry_date" required class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring focus:border-blue-300">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end">
+            <a href="{{ url_for('admin.schools') }}" class="text-gray-600 hover:text-gray-800 ml-4">إلغاء</a>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow focus:outline-none">
+                حفظ
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

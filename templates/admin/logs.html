@@ -1,0 +1,53 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<h2 class="text-3xl font-bold mb-6 text-gray-800">سجلات النظام</h2>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التوقيت</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الترخيص / الجهاز</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراء</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">النتيجة</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">التفاصيل</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for log in logs.items %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    License: {{ log.license_id or '-' }}<br>
+                    Device: {{ log.device_id or '-' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ log.action }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 'bg-green-100 text-green-800' if log.result == 'success' else 'bg-red-100 text-red-800' }}">
+                        {{ log.result }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500 truncate max-w-xs" title="{{ log.details }}">{{ log.details or '-' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.ip_address }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if logs.has_prev %}
+            <a href="{{ url_for('admin.logs', page=logs.prev_num) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">السابق</a>
+            {% endif %}
+            {% if logs.has_next %}
+            <a href="{{ url_for('admin.logs', page=logs.next_num) }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">التالي</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

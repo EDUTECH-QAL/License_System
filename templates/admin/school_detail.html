@@ -1,0 +1,273 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800">{{ school.name }}</h2>
+        <p class="text-gray-500">{{ school.education_admin }}</p>
+    </div>
+    <a href="{{ url_for('admin.schools') }}" class="text-gray-600 hover:text-gray-900">
+        <i class="fas fa-arrow-left ml-1"></i> عودة للقائمة
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- License Info -->
+    <div class="lg:col-span-2 space-y-6">
+        {% if school.licenses %}
+        {% set license = school.licenses[0] %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-bold text-gray-800">بيانات الترخيص</h3>
+                <span class="px-3 py-1 rounded-full text-sm font-semibold {{ 'bg-green-100 text-green-800' if license.status == 'active' else 'bg-red-100 text-red-800' }}">
+                    {{ license.status }}
+                </span>
+            </div>
+            
+            <form action="{{ url_for('admin.update_license', id=license.id) }}" method="POST" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-600">مفتاح الترخيص</label>
+                        <div class="flex items-center mt-1">
+                            <code class="bg-gray-100 px-2 py-1 rounded text-sm flex-1">{{ license.license_key }}</code>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600">تاريخ الانتهاء</label>
+                        <input type="date" name="expiry_date" value="{{ license.expiry_date.strftime('%Y-%m-%d') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600">عدد الأجهزة المسموح</label>
+                        <input type="number" name="max_devices" value="{{ license.max_devices }}" min="1" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600">الحالة</label>
+                        <select name="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2">
+                            <option value="active" {{ 'selected' if license.status == 'active' else '' }}>نشط (Active)</option>
+                            <option value="expired" {{ 'selected' if license.status == 'expired' else '' }}>منتهي (Expired)</option>
+                            <option value="suspended" {{ 'selected' if license.status == 'suspended' else '' }}>معلق (Suspended)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-left pt-2 flex justify-end space-x-2 space-x-reverse">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">تحديث الترخيص</button>
+                    <button type="submit" formaction="{{ url_for('admin.renew_license', id=license.id) }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        <i class="fas fa-sync-alt ml-1"></i> تجديد سنة
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Devices List -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">الأجهزة المسجلة ({{ license.devices|length }})</h3>
+            </div>
+            <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">اسم الجهاز</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المعرف</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">آخر ظهور</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for device in license.devices %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ device.device_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500" title="{{ device.device_identifier }}">{{ device.device_identifier[:10] }}...</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ device.last_check.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 'bg-green-100 text-green-800' if device.status == 'active' else 'bg-red-100 text-red-800' }}">
+                                {{ device.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2 space-x-reverse">
+                            <form action="{{ url_for('admin.toggle_device', id=device.id) }}" method="POST" class="inline">
+                                <button type="submit" class="text-{{ 'red' if device.status == 'active' else 'green' }}-600 hover:text-{{ 'red' if device.status == 'active' else 'green' }}-900">
+                                    {{ 'حظر' if device.status == 'active' else 'فك الحظر' }}
+                                </button>
+                            </form>
+                            <span class="text-gray-300">|</span>
+                            <form action="{{ url_for('admin.delete_device', id=device.id) }}" method="POST" class="inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الجهاز؟ سيتمكن المستخدم من التسجيل مرة أخرى كجهاز جديد.');">
+                                <button type="submit" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash-alt"></i> حذف
+                                </button>
+                            </form>
+                            <span class="text-gray-300">|</span>
+                            <form action="{{ url_for('admin.request_device_backup', id=device.id) }}" method="POST" class="inline">
+                                <button type="submit" class="text-purple-600 hover:text-purple-900" title="طلب نسخة احتياطية">
+                                    <i class="fas fa-cloud-download-alt"></i>
+                                </button>
+                            </form>
+                            <span class="text-gray-300">|</span>
+                            <form action="{{ url_for('admin.request_factory_reset', id=device.id) }}" method="POST" class="inline" onsubmit="return confirm('تحذير خطير: هل أنت متأكد من إرسال أمر إعادة ضبط المصنع؟ سيتم مسح جميع البيانات الموجودة على هذا الجهاز بمجرد اتصاله بالإنترنت.');">
+                                <button type="submit" class="text-red-600 hover:text-red-900" title="إعادة ضبط المصنع (حذف جميع البيانات)">
+                                    <i class="fas fa-skull-crossbones"></i>
+                                </button>
+                            </form>
+                            {% if device.pending_command %}
+                            <span class="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full ml-1">
+                                <i class="fas fa-clock"></i> معلق
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not license.devices %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">لا توجد أجهزة مسجلة بعد</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- School Users Management -->
+        <div class="bg-white rounded-lg shadow overflow-hidden mt-6">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">مستخدمي النظام المدرسي</h3>
+                <button onclick="document.getElementById('addUserForm').classList.toggle('hidden')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                    <i class="fas fa-plus ml-1"></i> إضافة مستخدم
+                </button>
+            </div>
+            
+            <!-- Add User Form (Hidden by default) -->
+            <div id="addUserForm" class="hidden px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <form action="{{ url_for('admin.add_school_user', id=school.id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-sm text-gray-600">اسم المستخدم</label>
+                        <input type="text" name="username" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600">كلمة المرور</label>
+                        <input type="text" name="password" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600">الدور</label>
+                        <select name="role" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm border p-2">
+                            <option value="teacher">معلم (Teacher)</option>
+                            <option value="admin">مسؤول (Admin)</option>
+                            <option value="principal">مدير (Principal)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">إضافة</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">اسم المستخدم</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الدور</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ الإضافة</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for user in school.users %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.username }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if user.role == 'admin' %}مسؤول{% elif user.role == 'principal' %}مدير{% else %}معلم{% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ 'bg-green-100 text-green-800' if user.is_active else 'bg-red-100 text-red-800' }}">
+                                    {{ 'نشط' if user.is_active else 'معطل' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex space-x-2 space-x-reverse">
+                                <form action="{{ url_for('admin.toggle_school_user', user_id=user.id) }}" method="POST" class="inline">
+                                    <button type="submit" class="text-{{ 'red' if user.is_active else 'green' }}-600 hover:text-{{ 'red' if user.is_active else 'green' }}-900" title="{{ 'تعطيل' if user.is_active else 'تنشيط' }}">
+                                        <i class="fas fa-{{ 'ban' if user.is_active else 'check-circle' }}"></i>
+                                    </button>
+                                </form>
+                                <span class="text-gray-300">|</span>
+                                <form action="{{ url_for('admin.reset_school_user_password', user_id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('هل أنت متأكد من إعادة تعيين كلمة المرور؟ سيتم توليد كلمة مرور جديدة عشوائية.');">
+                                    <button type="submit" class="text-yellow-600 hover:text-yellow-900" title="إعادة تعيين كلمة المرور">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                </form>
+                                <span class="text-gray-300">|</span>
+                                <form action="{{ url_for('admin.delete_school_user', user_id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟');">
+                                    <button type="submit" class="text-red-600 hover:text-red-900" title="حذف">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not school.users %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">لا يوجد مستخدمين مسجلين لهذه المدرسة</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <p class="text-yellow-700">لا يوجد ترخيص لهذه المدرسة.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar Info -->
+    <div class="space-y-6">
+        <!-- School Details -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">بيانات المدرسة</h3>
+            <div class="space-y-3">
+                <div>
+                    <span class="text-gray-500 text-sm block">الاسم</span>
+                    <span class="font-medium">{{ school.name }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-sm block">الإدارة</span>
+                    <span class="font-medium">{{ school.education_admin }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-sm block">الهاتف</span>
+                    <span class="font-medium">{{ school.phone or '-' }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-sm block">البريد الإلكتروني</span>
+                    <span class="font-medium">{{ school.contact_email or '-' }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-sm block">تاريخ الإضافة</span>
+                    <span class="font-medium">{{ school.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Info -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">النسخ الاحتياطية</h3>
+            {% if school.backups %}
+                {% set backup = school.backups[-1] %} <!-- Last backup -->
+                <div class="text-sm">
+                    <p class="mb-2"><span class="font-bold">آخر نسخة:</span> {{ backup.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p class="mb-2"><span class="font-bold">الحجم:</span> {{ (backup.file_size / 1024 / 1024)|round(2) }} MB</p>
+                    <a href="{{ url_for('admin.download_backup', id=backup.id) }}" class="block w-full text-center bg-gray-800 text-white py-2 rounded hover:bg-gray-700 mt-4">
+                        <i class="fas fa-download ml-1"></i> تحميل النسخة
+                    </a>
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-sm">لا توجد نسخ احتياطية مرفوعة.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

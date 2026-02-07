@@ -1,0 +1,42 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-800">
+                {{ 'تعديل مستخدم' if user else 'إضافة مستخدم جديد' }}
+            </h2>
+            <a href="{{ url_for('admin.users') }}" class="text-gray-600 hover:text-gray-900">
+                <i class="fas fa-arrow-left ml-1"></i> عودة
+            </a>
+        </div>
+        
+        <form method="POST" class="p-6">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                    اسم المستخدم
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                       id="username" name="username" type="text" required
+                       value="{{ user.username if user else '' }}">
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                    {{ 'كلمة المرور (اتركها فارغة للإبقاء على الحالية)' if user else 'كلمة المرور' }}
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                       id="password" name="password" type="password" 
+                       {{ 'required' if not user else '' }}>
+            </div>
+            
+            <div class="flex items-center justify-end">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                    <i class="fas fa-save ml-2"></i> حفظ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

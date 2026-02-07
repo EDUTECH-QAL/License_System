@@ -1,0 +1,229 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+    <h2 class="text-3xl font-bold text-gray-800">إدارة المدارس</h2>
+    <a href="{{ url_for('admin.add_school') }}" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-center">
+        <i class="fas fa-plus ml-2"></i> إضافة مدرسة
+    </a>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="mb-6 bg-white p-4 rounded-lg shadow">
+    <form action="{{ url_for('admin.schools') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+        <!-- Search -->
+        <div class="flex-1 relative">
+            <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="بحث باسم المدرسة أو الإدارة..." 
+                   class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="w-full md:w-48">
+            <select name="status" onchange="this.form.submit()" class="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-blue-500 bg-white">
+                <option value="">كل الحالات</option>
+                <option value="active" {{ 'selected' if current_status == 'active' else '' }}>نشط (Active)</option>
+                <option value="expired" {{ 'selected' if current_status == 'expired' else '' }}>منتهي (Expired)</option>
+                <option value="suspended" {{ 'selected' if current_status == 'suspended' else '' }}>معلق (Suspended)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-700">بحث</button>
+        
+        {% if request.args.get('q') or request.args.get('status') %}
+        <a href="{{ url_for('admin.schools') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 flex items-center justify-center" title="إلغاء البحث">
+            <i class="fas fa-times"></i>
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Mobile Cards (Visible on small screens) -->
+<div class="grid grid-cols-1 gap-4 md:hidden mb-6">
+    {% for school in schools.items %}
+    <div class="bg-white rounded-lg shadow p-4 border-r-4 
+        {% if school.licenses %}
+            {% if school.licenses[0].status == 'active' and school.licenses[0].is_valid() %}border-green-500
+            {% elif school.licenses[0].status == 'expired' or not school.licenses[0].is_valid() %}border-red-500
+            {% else %}border-yellow-500{% endif %}
+        {% else %}border-gray-300{% endif %}">
+        
+        <div class="flex justify-between items-start mb-2">
+            <div>
+                <h3 class="font-bold text-gray-900">{{ school.name }}</h3>
+                <p class="text-sm text-gray-500">{{ school.education_admin }}</p>
+            </div>
+            {% if school.licenses %}
+                {% set license = school.licenses[0] %}
+                <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                    {% if license.status == 'active' and license.is_valid() %}bg-green-100 text-green-800
+                    {% elif license.status == 'expired' or not license.is_valid() %}bg-red-100 text-red-800
+                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                    {{ license.status }}
+                </span>
+            {% else %}
+                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">No License</span>
+            {% endif %}
+        </div>
+        
+        <div class="space-y-2 text-sm text-gray-600 mb-4">
+            <div class="flex items-center">
+                <i class="fas fa-envelope w-5 text-center ml-2 text-gray-400"></i>
+                <span>{{ school.contact_email or 'لا يوجد بريد' }}</span>
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-desktop w-5 text-center ml-2 text-gray-400"></i>
+                {% if school.licenses %}
+                    <span>{{ school.licenses[0].devices|length }} / {{ school.licenses[0].max_devices }} أجهزة</span>
+                {% else %}
+                    <span>-</span>
+                {% endif %}
+            </div>
+            {% if school.licenses %}
+            <div class="flex items-center">
+                <i class="fas fa-calendar-alt w-5 text-center ml-2 text-gray-400"></i>
+                <span>ينتهي: {{ school.licenses[0].expiry_date.strftime('%Y-%m-%d') }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <a href="{{ url_for('admin.school_detail', id=school.id) }}" class="block w-full text-center bg-gray-50 hover:bg-gray-100 text-indigo-600 font-medium py-2 rounded border border-gray-200 transition-colors">
+            عرض التفاصيل
+        </a>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+        <i class="fas fa-search fa-3x mb-3 text-gray-300"></i>
+        <p>لا توجد مدارس مطابقة للبحث</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Desktop Table (Visible on medium+ screens) -->
+<div class="hidden md:block bg-white rounded-lg shadow overflow-hidden mb-6">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">اسم المدرسة</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإدارة التعليمية</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">حالة الترخيص</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الأجهزة</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for school in schools.items %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ school.name }}</div>
+                        <div class="text-sm text-gray-500">{{ school.contact_email or '' }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ school.education_admin }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if school.licenses %}
+                            {% set license = school.licenses[0] %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if license.status == 'active' and license.is_valid() %}bg-green-100 text-green-800
+                                {% elif license.status == 'expired' or not license.is_valid() %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ license.status }}
+                            </span>
+                            <div class="text-xs text-gray-400 mt-1">ينتهي: {{ license.expiry_date.strftime('%Y-%m-%d') }}</div>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">لا يوجد ترخيص</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if school.licenses %}
+                            {{ school.licenses[0].devices|length }} / {{ school.licenses[0].max_devices }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{{ url_for('admin.school_detail', id=school.id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded hover:bg-indigo-100 transition-colors">تفاصيل</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fas fa-inbox fa-3x mb-3 text-gray-300"></i>
+                            <p>لا توجد بيانات للعرض</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if schools.pages > 1 %}
+<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+    <div class="flex-1 flex justify-between sm:hidden">
+        {% if schools.has_prev %}
+        <a href="{{ url_for('admin.schools', page=schools.prev_num, q=request.args.get('q'), status=request.args.get('status')) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            السابق
+        </a>
+        {% else %}
+        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-white cursor-not-allowed">السابق</span>
+        {% endif %}
+        
+        {% if schools.has_next %}
+        <a href="{{ url_for('admin.schools', page=schools.next_num, q=request.args.get('q'), status=request.args.get('status')) }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            التالي
+        </a>
+        {% else %}
+        <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-white cursor-not-allowed">التالي</span>
+        {% endif %}
+    </div>
+    
+    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+            <p class="text-sm text-gray-700">
+                عرض <span class="font-medium">{{ (schools.page - 1) * schools.per_page + 1 }}</span> إلى <span class="font-medium">{{ [schools.page * schools.per_page, schools.total] | min }}</span> من <span class="font-medium">{{ schools.total }}</span> نتيجة
+            </p>
+        </div>
+        <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                {% if schools.has_prev %}
+                <a href="{{ url_for('admin.schools', page=schools.prev_num, q=request.args.get('q'), status=request.args.get('status')) }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">السابق</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+                
+                {% for page_num in schools.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                    {% if page_num %}
+                        {% if schools.page == page_num %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                            {{ page_num }}
+                        </span>
+                        {% else %}
+                        <a href="{{ url_for('admin.schools', page=page_num, q=request.args.get('q'), status=request.args.get('status')) }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ page_num }}
+                        </a>
+                        {% endif %}
+                    {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if schools.has_next %}
+                <a href="{{ url_for('admin.schools', page=schools.next_num, q=request.args.get('q'), status=request.args.get('status')) }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <span class="sr-only">التالي</span>
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
