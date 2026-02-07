@@ -6,7 +6,7 @@ import json
 import socket
 
 class LicenseClient:
-    def __init__(self, server_url='http://127.0.0.1:5000', storage_file='license_token.json'):
+    def __init__(self, server_url='https://qsap.edutech-egy.com', storage_file='license_token.json'):
         self.server_url = server_url
         self.storage_file = storage_file
         self.token = None

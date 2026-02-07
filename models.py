@@ -101,6 +101,8 @@ class EmergencyLog(db.Model):
     generated_by = db.Column(db.String(50)) # client, server
     reason = db.Column(db.String(200))
     code_hash = db.Column(db.String(64)) # To prevent replay if we want
+    duration_days = db.Column(db.Integer, default=3)
+    expires_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_used = db.Column(db.Boolean, default=False)
     used_at = db.Column(db.DateTime)
