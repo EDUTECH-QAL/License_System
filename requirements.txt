@@ -1,0 +1,8 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+PyJWT
+cryptography
+requests
+python-dotenv
+gunicorn
