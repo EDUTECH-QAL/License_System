@@ -1,0 +1,53 @@
+
+# --- School Users Management ---
+@admin_bp.route('/schools/<int:id>/users/add', methods=['POST'])
+@login_required
+def add_school_user(id):
+    school = School.query.get_or_404(id)
+    username = request.form.get('username')
+    password = request.form.get('password')
+    role = request.form.get('role', 'teacher')
+    
+    if SchoolUser.query.filter_by(school_id=id, username=username).first():
+        flash('Username already exists for this school', 'error')
+        return redirect(url_for('admin.school_detail', id=id))
+        
+    user = SchoolUser(school_id=id, username=username, role=role)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    
+    flash('User added successfully')
+    return redirect(url_for('admin.school_detail', id=id))
+
+@admin_bp.route('/school_users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def delete_school_user(user_id):
+    user = SchoolUser.query.get_or_404(user_id)
+    school_id = user.school_id
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted successfully')
+    return redirect(url_for('admin.school_detail', id=school_id))
+
+@admin_bp.route('/school_users/<int:user_id>/reset_password', methods=['POST'])
+@login_required
+def reset_school_user_password(user_id):
+    user = SchoolUser.query.get_or_404(user_id)
+    new_password = request.form.get('new_password')
+    if new_password:
+        user.set_password(new_password)
+        db.session.commit()
+        flash('Password updated successfully')
+    else:
+        flash('Password cannot be empty', 'error')
+    return redirect(url_for('admin.school_detail', id=user.school_id))
+
+@admin_bp.route('/school_users/<int:user_id>/toggle', methods=['POST'])
+@login_required
+def toggle_school_user(user_id):
+    user = SchoolUser.query.get_or_404(user_id)
+    user.is_active = not user.is_active
+    db.session.commit()
+    flash(f"User {user.username} {'activated' if user.is_active else 'deactivated'}")
+    return redirect(url_for('admin.school_detail', id=user.school_id))
