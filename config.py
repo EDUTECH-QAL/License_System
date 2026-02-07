@@ -6,7 +6,13 @@ class Config:
     # Ensure we use the absolute path to the instance database
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DB_PATH = os.path.join(BASE_DIR, 'instance', 'license_system.db')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{DB_PATH}'
+    
+    # Database URL handling
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+        
+    SQLALCHEMY_DATABASE_URI = database_url or f'sqlite:///{DB_PATH}'
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
